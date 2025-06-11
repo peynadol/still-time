@@ -32,6 +32,9 @@ const SessionForm = () => {
     "painting",
     "blind drawing",
   ]);
+  const [isNewType, setIsNewType] = useState(false);
+  const [newTypeInput, setNewTypeInput] = useState("");
+
   const form = useForm<Session>({
     resolver: zodResolver(sessionSchema),
     defaultValues: {
@@ -45,15 +48,25 @@ const SessionForm = () => {
     },
   });
 
-  const onSubmit = (values: Session) => {
+  const onFormSubmit = (values: Session) => {
     console.log(values);
+  };
+
+  const onNewTypeSubmit = (e) => {
+    e.preventDefault();
+    const newType = newTypeInput.toLowerCase().trim();
+    if (!sessionType.includes(newType)) {
+      setSessionType([...sessionType, newType]);
+    }
+    form.setValue("type", newType);
+    setIsNewType(false);
   };
 
   console.log(form.formState.errors);
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
+      <form onSubmit={form.handleSubmit(onFormSubmit)}>
         <FormField
           control={form.control}
           name="type"
@@ -61,22 +74,37 @@ const SessionForm = () => {
             <FormItem>
               <FormLabel>Session Type</FormLabel>
               <FormControl>
-                <Select>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select Session Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {sessionType.map((type) => {
-                        return (
-                          <SelectItem key={type} value="type">
-                            {toTitle(type)}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+                {!isNewType ? (
+                  <div>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select Session Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {sessionType.map((type) => {
+                            return (
+                              <SelectItem key={type} value={type}>
+                                {toTitle(type)}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    <button onClick={() => setIsNewType(true)}>
+                      Add new type
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <Input
+                      placeholder="Enter session type"
+                      onChange={(e) => setNewTypeInput(e.target.value)}
+                    />
+                    <button onClick={onNewTypeSubmit}>Confirm</button>
+                  </div>
+                )}
               </FormControl>
               <FormMessage />
             </FormItem>
