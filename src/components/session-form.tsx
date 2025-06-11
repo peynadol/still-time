@@ -1,8 +1,10 @@
 // new and edit session form
 "use client";
-import { Session, sessionSchema } from "@/lib/types";
+import { moodOptions, sessionFormSchema } from "@/lib/types";
+import { nanoid } from "nanoid";
+import { Session, sessionSchema, SessionForm } from "@/lib/types";
 import { zodResolver } from "@hookform/resolvers/zod";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { Button } from "./ui/button";
 import { BadgeX } from "lucide-react";
@@ -27,6 +29,8 @@ import {
 } from "@/components/ui/select";
 import { toTitle } from "@/lib/utils";
 import { Badge } from "./ui/badge";
+import { Textarea } from "./ui/textarea";
+import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 
 const SessionForm = () => {
   const [sessionType, setSessionType] = useState([
@@ -39,16 +43,14 @@ const SessionForm = () => {
   const [newToolInput, setNewToolInput] = useState("");
   const [isAddingNewTool, setIsAddingNewTool] = useState(false);
 
-  const form = useForm<Session>({
-    resolver: zodResolver(sessionSchema),
+  const form = useForm<SessionForm>({
+    resolver: zodResolver(sessionFormSchema),
     defaultValues: {
-      id: "",
       duration: 0,
-      mood: "Calm",
+      mood: [],
       notes: "",
       tools: ["sloyd knife", "strop", "sandpaper"],
       type: "",
-      timestamp: "",
     },
   });
 
@@ -57,8 +59,18 @@ const SessionForm = () => {
     name: "tools",
   });
 
-  const onFormSubmit = (values: Session) => {
-    console.log(values);
+  const onFormSubmit = (values: SessionForm) => {
+    try {
+      const fullSession: Session = {
+        ...values,
+        id: nanoid(),
+        timestamp: new Date().toISOString(),
+      };
+
+      console.log(fullSession);
+    } catch (err) {
+      console.error("Submission failed:", err);
+    }
   };
 
   const onNewTypeSubmit = (e) => {
@@ -86,7 +98,6 @@ const SessionForm = () => {
           name="type"
           render={({ field }) => (
             <FormItem>
-              {/* SESSION TYPE DROP DOWN */}
               <FormLabel>Session Type</FormLabel>
               <FormControl>
                 {!isNewType ? (
@@ -178,12 +189,121 @@ const SessionForm = () => {
                   </Button>
                 )}
               </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
 
+        {/* DURATION */}
+        <FormField
+          control={form.control}
+          name="duration"
+          render={({ field }) => {
+            const totalMinutes = field.value || 0;
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+
+            const updateDuration = (h: number, m: number) => {
+              const clampedMins = Math.min(Math.max(m, 0), 59);
+              const total = h * 60 + clampedMins;
+              field.onChange(total);
+            };
+
+            return (
+              <FormItem>
+                <FormLabel>Duration</FormLabel>
+                <FormControl>
+                  <div className="flex gap-2">
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      placeholder="Hours"
+                      value={hours}
+                      onChange={(e) =>
+                        updateDuration(Number(e.target.value), minutes)
+                      }
+                    />
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      placeholder="Minutes"
+                      value={minutes}
+                      onChange={(e) =>
+                        updateDuration(hours, Number(e.target.value))
+                      }
+                    />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
+        />
+
         {/* NOTES */}
-        <Button>Submit</Button>
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Notes</FormLabel>
+              <FormControl>
+                <Textarea placeholder="Optional notes here..." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* MOOD TOGGLES */}
+        <FormField
+          control={form.control}
+          name="mood"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Mood</FormLabel>
+              <FormControl>
+                <ToggleGroup
+                  type="multiple"
+                  value={field.value}
+                  onValueChange={(val) => field.onChange(val)}
+                  className="flex flex-wrap gap-2 w-full"
+                >
+                  {moodOptions.map((mood) => (
+                    <ToggleGroupItem
+                      key={mood}
+                      value={mood}
+                      aria-label={mood}
+                      className="flex-none rounded-md border"
+                    >
+                      {mood}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button type="submit">Submit</Button>
+        <Button
+          type="button"
+          onClick={() => console.log("Current form values:", form.getValues())}
+        >
+          Debug Form Values
+        </Button>
+        <Button
+          type="button"
+          onClick={() => {
+            console.log("Form errors:", form.formState.errors);
+            console.log("Form is valid:", form.formState.isValid);
+          }}
+        >
+          Check Validation
+        </Button>
       </form>
     </Form>
   );

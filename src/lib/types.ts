@@ -30,14 +30,18 @@ export const moodOptions = [
   "Blank",
 ] as const;
 
-export const sessionSchema = z.object({
-  id: z.string().uuid(), // will use nano id for this
+export const sessionFormSchema = z.object({
   type: z.string().min(1),
   duration: z.number().min(1),
   tools: z.array(z.string()),
   notes: z.string().optional(),
-  mood: z.enum(moodOptions),
-  timestamp: z.string().datetime(),
+  mood: z.array(z.enum(moodOptions)),
 });
 
+export const sessionSchema = sessionFormSchema.extend({
+  id: z.string(),
+  timestamp: z.string,
+});
+
+export type SessionForm = z.infer<typeof sessionFormSchema>;
 export type Session = z.infer<typeof sessionSchema>;
