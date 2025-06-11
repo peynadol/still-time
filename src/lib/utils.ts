@@ -6,12 +6,8 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function toTitle(str: string) {
-  // want to split the strings at a space
-  // want to upper case the index [0] of each element of the array
-  // want to join
   const split = str.split(" ");
 
-  // slice at first element, cap first el, join
   const capitalised = split.map(
     (el) => el.charAt(0).toUpperCase() + el.substring(1)
   );
