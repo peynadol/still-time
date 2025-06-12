@@ -31,13 +31,12 @@ import { toTitle } from "@/lib/utils";
 import { Badge } from "./ui/badge";
 import { Textarea } from "./ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
+import { mockSessions } from "@/lib/data";
 
 const SessionForm = () => {
-  const [sessionType, setSessionType] = useState([
-    "wood carving",
-    "painting",
-    "blind drawing",
-  ]);
+  const uniqueTypes = Array.from(new Set(mockSessions.map((s) => s.type)));
+  const [sessionType, setSessionType] = useState(uniqueTypes);
+
   const [isNewType, setIsNewType] = useState(false);
   const [newTypeInput, setNewTypeInput] = useState("");
   const [newToolInput, setNewToolInput] = useState("");
@@ -49,7 +48,7 @@ const SessionForm = () => {
       duration: 0,
       mood: [],
       notes: "",
-      tools: ["sloyd knife", "strop", "sandpaper"],
+      tools: [],
       type: "",
     },
   });
@@ -76,9 +75,11 @@ const SessionForm = () => {
   const onNewTypeSubmit = (e) => {
     e.preventDefault();
     const newType = newTypeInput.toLowerCase().trim();
-    if (!sessionType.includes(newType)) {
-      setSessionType([...sessionType, newType]);
+    const normalized = newType.toLowerCase().trim();
+    if (!sessionType.includes(normalized)) {
+      setSessionType((prev) => [...prev, normalized]);
     }
+
     form.setValue("type", newType);
     setIsNewType(false);
   };
@@ -87,6 +88,23 @@ const SessionForm = () => {
     const updatedTools = tools.filter((t) => t !== tool);
     form.setValue("tools", updatedTools);
     console.log("removed");
+  };
+
+  const handleTypeChange = (selectedType: string) => {
+    const matchingSessions = mockSessions
+      .filter((s) => s.type === selectedType) // grab matching type from mock data
+      .sort(
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime() // sort by most recent
+      );
+
+    // if we find matching sessions...
+    if (matchingSessions.length > 0) {
+      //grab tools from most recent session
+      const recentTools = matchingSessions[0].tools;
+
+      form.setValue("tools", recentTools);
+    }
   };
 
   return (
@@ -102,7 +120,13 @@ const SessionForm = () => {
               <FormControl>
                 {!isNewType ? (
                   <div>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select
+                      value={field.value}
+                      onValueChange={(val) => {
+                        field.onChange(val);
+                        handleTypeChange(val);
+                      }}
+                    >
                       <SelectTrigger className="w-[180px]">
                         <SelectValue placeholder="Select Session Type" />
                       </SelectTrigger>
@@ -289,21 +313,6 @@ const SessionForm = () => {
         />
 
         <Button type="submit">Submit</Button>
-        <Button
-          type="button"
-          onClick={() => console.log("Current form values:", form.getValues())}
-        >
-          Debug Form Values
-        </Button>
-        <Button
-          type="button"
-          onClick={() => {
-            console.log("Form errors:", form.formState.errors);
-            console.log("Form is valid:", form.formState.isValid);
-          }}
-        >
-          Check Validation
-        </Button>
       </form>
     </Form>
   );
