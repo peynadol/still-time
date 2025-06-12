@@ -167,7 +167,9 @@ const SessionForm = () => {
           name="tools"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Tools Used:</FormLabel>
+              <FormLabel>
+                Tools Used: (most recent tools will auto populate)
+              </FormLabel>
 
               {tools.map((tool) => {
                 return (
